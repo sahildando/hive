@@ -177,16 +177,14 @@ PYTHONPATH=exports uv run python -m my_agent test --type success
 
 ```bash
 # Reinstall framework package
-cd core
-uv pip install -e .
+uv sync --all-packages
 ```
 
 ### ModuleNotFoundError: No module named 'aden_tools'
 
 ```bash
 # Reinstall tools package
-cd tools
-uv pip install -e .
+uv sync --all-packages
 ```
 
 ### LLM API Errors
@@ -201,7 +199,7 @@ echo $ANTHROPIC_API_KEY
 
 ```bash
 # Remove and reinstall
-pip uninstall -y framework tools
+uv cache clean
 ./quickstart.sh
 ```
 
