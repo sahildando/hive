@@ -103,23 +103,41 @@ def _extract_spillover_filename(content: str) -> str | None:
 class ConversationStore(Protocol):
     """Protocol for conversation persistence backends."""
 
-    async def write_part(self, seq: int, data: dict[str, Any]) -> None: ...
+    async def write_part(self, seq: int, data: dict[str, Any]) -> None:
+        """Persist a single message record by sequence number."""
+        ...
 
-    async def read_parts(self) -> list[dict[str, Any]]: ...
+    async def read_parts(self) -> list[dict[str, Any]]:
+        """Read all persisted message records in sequence order."""
+        ...
 
-    async def write_meta(self, data: dict[str, Any]) -> None: ...
+    async def write_meta(self, data: dict[str, Any]) -> None:
+        """Persist conversation-level metadata such as prompt configuration."""
+        ...
 
-    async def read_meta(self) -> dict[str, Any] | None: ...
+    async def read_meta(self) -> dict[str, Any] | None:
+        """Load previously persisted conversation metadata when available."""
+        ...
 
-    async def write_cursor(self, data: dict[str, Any]) -> None: ...
+    async def write_cursor(self, data: dict[str, Any]) -> None:
+        """Persist cursor data used for incremental resume operations."""
+        ...
 
-    async def read_cursor(self) -> dict[str, Any] | None: ...
+    async def read_cursor(self) -> dict[str, Any] | None:
+        """Read the latest persisted cursor state, if present."""
+        ...
 
-    async def delete_parts_before(self, seq: int) -> None: ...
+    async def delete_parts_before(self, seq: int) -> None:
+        """Delete persisted messages with sequence numbers lower than ``seq``."""
+        ...
 
-    async def close(self) -> None: ...
+    async def close(self) -> None:
+        """Release resources held by the store backend."""
+        ...
 
-    async def destroy(self) -> None: ...
+    async def destroy(self) -> None:
+        """Permanently remove all persisted conversation data."""
+        ...
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +221,7 @@ class NodeConversation:
 
     @property
     def system_prompt(self) -> str:
+        """Return the active system prompt used for the node conversation."""
         return self._system_prompt
 
     def update_system_prompt(self, new_prompt: str) -> None:
@@ -230,6 +249,7 @@ class NodeConversation:
 
     @property
     def current_phase(self) -> str | None:
+        """Return the currently active phase identifier, if one is set."""
         return self._current_phase
 
     @property
@@ -249,6 +269,7 @@ class NodeConversation:
 
     @property
     def next_seq(self) -> int:
+        """Return the next sequence number that will be assigned to a message."""
         return self._next_seq
 
     # --- Add messages ------------------------------------------------------
@@ -259,6 +280,7 @@ class NodeConversation:
         *,
         is_transition_marker: bool = False,
     ) -> Message:
+        """Append a user message to the conversation and persist it."""
         msg = Message(
             seq=self._next_seq,
             role="user",
@@ -276,6 +298,7 @@ class NodeConversation:
         content: str,
         tool_calls: list[dict[str, Any]] | None = None,
     ) -> Message:
+        """Append an assistant message to the conversation and persist it."""
         msg = Message(
             seq=self._next_seq,
             role="assistant",
@@ -294,6 +317,7 @@ class NodeConversation:
         content: str,
         is_error: bool = False,
     ) -> Message:
+        """Append a tool result message and persist it in the backing store."""
         msg = Message(
             seq=self._next_seq,
             role="tool",
@@ -383,6 +407,7 @@ class NodeConversation:
         return self.estimate_tokens() / self._max_history_tokens
 
     def needs_compaction(self) -> bool:
+        """Return ``True`` when estimated usage crosses the compaction threshold."""
         return self.estimate_tokens() >= self._max_history_tokens * self._compaction_threshold
 
     # --- Output-key extraction ---------------------------------------------
